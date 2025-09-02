@@ -1,0 +1,57 @@
+#include <AFMotor.h>
+
+// Motores
+AF_DCMotor motorE(1);  
+AF_DCMotor motorD(2);
+
+// Sensores
+#define pinSD A12  // Direito
+#define pinSE A11  // Esquerdo
+
+int limite = 300;        // Threshold para diferenciar preto/branco
+int baseSpeed = 80;      // Velocidade base
+int curvaSpeed = 120;    // Velocidade máxima da roda oposta
+int numLeituras = 100;   // Número de leituras por sensor
+
+void setup() {
+  motorE.setSpeed(baseSpeed);
+  motorD.setSpeed(baseSpeed);
+}
+
+// Função de leitura ultra-rápida
+bool detectaPreto(int pin) {
+  for (int i = 0; i < numLeituras; i++) {
+    if (analogRead(pin) > limite) return true;
+  }
+  return false;
+}
+
+void loop() {
+  bool pretoE = detectaPreto(pinSE);
+  bool pretoD = detectaPreto(pinSD);
+
+  if (!pretoE && !pretoD) {
+    // Ambos brancos → segue reto
+    motorE.setSpeed(baseSpeed);
+    motorD.setSpeed(baseSpeed);
+  } 
+  else if (pretoE && !pretoD) {
+    // Esquerdo preto → curva máxima direita
+    motorE.setSpeed(0);          // roda esquerda para instantaneamente
+    motorD.setSpeed(curvaSpeed); // roda direita acelera ao máximo
+  } 
+  else if (!pretoE && pretoD) {
+    // Direito preto → curva máxima esquerda
+    motorE.setSpeed(curvaSpeed); // roda esquerda acelera ao máximo
+    motorD.setSpeed(0);          // roda direita para instantaneamente
+  } 
+  else if (pretoE && pretoD) {
+    // Ambos preto → segue reto
+    motorE.setSpeed(baseSpeed);
+    motorD.setSpeed(baseSpeed);
+  }
+
+  // Aplica direção
+  motorE.run(FORWARD);
+  motorD.run(FORWARD);
+}
