@@ -1,0 +1,68 @@
+#include <AFMotor.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+// Motores
+AF_DCMotor motorE(3);
+AF_DCMotor motorD(4);
+
+// LCD I2C
+LiquidCrystal_I2C lcd(0x27,16,2);
+
+// Sensores (digital)
+#define pinSD 53 // Direito
+#define pinSE 52 // Esquerdo
+
+int baseSpeed = 175;      // Velocidade na reta
+int curvaFrente = 220;    // Velocidade da roda que vai para frente na curva
+int curvaTras = 160;      // Velocidade da roda que vai para trás na curva
+
+void setup() {
+  pinMode(pinSE, INPUT);
+  pinMode(pinSD, INPUT);
+
+  motorE.setSpeed(baseSpeed);
+  motorD.setSpeed(baseSpeed);
+
+  lcd.init();
+  lcd.backlight();
+  lcd.setCursor(0,0);
+  lcd.print("   1000 anos");
+  lcd.setCursor(0,1);
+  lcd.print("   de Gloria");
+}
+
+void loop() {
+  // Leitura digital instantânea
+  bool pretoE = digitalRead(pinSE); // HIGH = preto
+  bool pretoD = digitalRead(pinSD);
+
+  if (!pretoE && !pretoD) {
+    // Reto
+    motorE.setSpeed(baseSpeed);
+    motorD.setSpeed(baseSpeed);
+    motorE.run(FORWARD);
+    motorD.run(FORWARD);
+  } 
+  else if (pretoE && !pretoD) {
+    // Curva direita
+    motorE.setSpeed(curvaTras);      // roda esquerda para trás mais devagar
+    motorD.setSpeed(curvaFrente);    // roda direita para frente
+    motorE.run(BACKWARD);
+    motorD.run(FORWARD);
+  } 
+  else if (!pretoE && pretoD) {
+    // Curva esquerda
+    motorE.setSpeed(curvaFrente);    // roda esquerda para frente
+    motorD.setSpeed(curvaTras);      // roda direita para trás mais devagar
+    motorE.run(FORWARD);
+    motorD.run(BACKWARD);
+  } 
+  else if (pretoE && pretoD) {
+    // Ambos preto → segue reto
+    motorE.setSpeed(baseSpeed);
+    motorD.setSpeed(baseSpeed);
+    motorE.run(FORWARD);
+    motorD.run(FORWARD);
+  }
+}
