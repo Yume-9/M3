@@ -1,0 +1,68 @@
+#include <AFMotor.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+// Motores
+AF_DCMotor motorE(3);
+AF_DCMotor motorD(4);
+
+// LCD I2C
+LiquidCrystal_I2C lcd(0x27,16,2);
+
+// Sensores digitais
+#define pinSD 53 // Sensor Direito
+#define pinSE 52 // Sensor Esquerdo
+
+int baseSpeed   = 192; // Velocidade normal
+int curvaFrente = 225; // Roda que vai para frente na curva
+int curvaTras   = 225; // Roda que vai para trás na curva
+
+void setup() {
+  pinMode(pinSE, INPUT);
+  pinMode(pinSD, INPUT);
+
+  motorE.setSpeed(baseSpeed);
+  motorD.setSpeed(baseSpeed);
+
+  lcd.init();
+  lcd.backlight();
+  lcd.setCursor(0,0);
+  lcd.print("   Uma Vez CPM ");
+  lcd.setCursor(0,1);
+  lcd.print("    Sempre CPM ");
+}
+
+void loop() {
+  // Agora: HIGH = preto, LOW = branco
+  bool pretoE = digitalRead(pinSE);
+  bool pretoD = digitalRead(pinSD);
+
+  if (!pretoE && !pretoD) {
+    // Ambos brancos → segue reto
+    motorE.setSpeed(baseSpeed);
+    motorD.setSpeed(baseSpeed);
+    motorE.run(FORWARD);
+    motorD.run(FORWARD);
+  }
+  else if (!pretoE && pretoD) {
+    // Esquerdo branco, direito preto → curva direita
+    motorE.setSpeed(curvaTras);
+    motorD.setSpeed(curvaFrente);
+    motorE.run(BACKWARD);
+    motorD.run(FORWARD);
+  }
+  else if (pretoE && !pretoD) {
+    // Esquerdo preto, direito branco → curva esquerda
+    motorE.setSpeed(curvaFrente);
+    motorD.setSpeed(curvaTras);
+    motorE.run(FORWARD);
+    motorD.run(BACKWARD);
+  }
+  else if (pretoE && pretoD) {
+    // Ambos preto → segue reto (ou parar se preferir)
+    motorE.setSpeed(baseSpeed);
+    motorD.setSpeed(baseSpeed);
+    motorE.run(FORWARD);
+    motorD.run(FORWARD);
+    }
+}
